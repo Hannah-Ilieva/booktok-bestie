@@ -30,16 +30,17 @@ def initialize_database():
         connection.close()
 
 
-def add_book(title, author, genre, status, total_pages):
+def add_book(title, author, genre, status, total_pages, mood, tropes):
     connection = sqlite3.connect(DB_PATH)
 
     try:
         connection.execute(
             """
-            INSERT INTO books (title, author, genre, status, total_pages)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO books
+                (title, author, genre, status, total_pages, mood, tropes)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (title, author, genre, status, total_pages)
+            (title, author, genre, status, total_pages, mood, tropes)
         )
         connection.commit()
     finally:
@@ -54,7 +55,7 @@ def get_books():
         rows = connection.execute(
             """
             SELECT id, title, author, genre, status,
-                   total_pages, current_page, rating, review
+                   total_pages, current_page, rating, review, mood, tropes
             FROM books
             ORDER BY added_at DESC
             """
@@ -78,5 +79,35 @@ def update_book(book_id, current_page, status, rating, review):
             (current_page, status, rating, review, book_id)
         )
         connection.commit()
+    finally:
+        connection.close()
+
+
+def get_reading_stats():
+    connection = sqlite3.connect(DB_PATH)
+    connection.row_factory = sqlite3.Row
+
+    try:
+        row = connection.execute("""
+            SELECT
+                COUNT(*) AS total_books,
+                COALESCE(SUM(
+                    CASE WHEN status = 'Finished' THEN 1 ELSE 0 END
+                ), 0) AS finished_books,
+                COALESCE(SUM(
+                    CASE WHEN status = 'Currently Reading' THEN 1 ELSE 0 END
+                ), 0) AS currently_reading,
+                COALESCE(SUM(
+                    CASE
+                        WHEN status = 'Finished' AND total_pages IS NOT NULL
+                            THEN total_pages
+                        ELSE current_page
+                    END
+                ), 0) AS pages_read,
+                ROUND(AVG(rating), 1) AS average_rating
+            FROM books
+        """).fetchone()
+
+        return dict(row)
     finally:
         connection.close()
