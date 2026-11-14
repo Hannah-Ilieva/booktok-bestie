@@ -1,0 +1,17 @@
+.stApp {
+    background: linear-gradient(135deg, #fbf8ff, #f2eaff);
+    color: #392b45;
+}
+
+.block-container {
+    max-width: 1100px;
+    padding-top: 3rem;
+}
+
+h1, h2, h3 {
+    color: #593b78;
+}
+
+[data-testid="stCaptionContainer"] {
+    color: #806b91;
+}
