@@ -4,6 +4,7 @@ import streamlit as st
 
 from database import add_book, get_books, initialize_database
 
+from database import add_book, get_books, initialize_database, update_book
 
 def load_css():
     css_path = Path(__file__).parent / "styles.css"
@@ -58,7 +59,67 @@ st.subheader("My shelf")
 
 books = get_books()
 
-if books:
-    st.dataframe(books, hide_index=True, use_container_width=True)
-else:
+if not books:
     st.info("Your shelf is empty. Add your first book above!")
+else:
+    visible_books = [
+        {key: value for key, value in book.items() if key != "id"}
+        for book in books
+    ]
+    st.dataframe(visible_books, hide_index=True, use_container_width=True)
+
+    st.subheader("Update progress, rating, and review")
+
+    selected_book = st.selectbox(
+        "Choose a book",
+        books,
+        format_func=lambda book: f"{book['title']} — {book['author']}"
+    )
+
+    status_options = [
+        "Want to Read",
+        "Currently Reading",
+        "Finished",
+        "DNF"
+    ]
+
+    with st.form("update_book_form"):
+        current_page = st.number_input(
+            "Current page",
+            min_value=0,
+            max_value=selected_book["total_pages"],
+            value=selected_book["current_page"],
+            step=1
+        )
+
+        status = st.selectbox(
+            "Reading status",
+            status_options,
+            index=status_options.index(selected_book["status"])
+        )
+
+        rating = st.slider(
+            "Rating (0 means unrated)",
+            min_value=0.0,
+            max_value=5.0,
+            value=float(selected_book["rating"] or 0),
+            step=0.5
+        )
+
+        review = st.text_area(
+            "Review",
+            value=selected_book["review"] or ""
+        )
+
+        save_changes = st.form_submit_button("Save changes")
+
+    if save_changes:
+        update_book(
+            selected_book["id"],
+            current_page,
+            status,
+            rating if rating > 0 else None,
+            review.strip()
+        )
+        st.success("Your book details have been updated.")
+        st.rerun()

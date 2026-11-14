@@ -53,12 +53,30 @@ def get_books():
     try:
         rows = connection.execute(
             """
-            SELECT title, author, genre, status, total_pages, current_page
+            SELECT id, title, author, genre, status,
+                   total_pages, current_page, rating, review
             FROM books
             ORDER BY added_at DESC
             """
         ).fetchall()
 
         return [dict(row) for row in rows]
+    finally:
+        connection.close()
+
+
+def update_book(book_id, current_page, status, rating, review):
+    connection = sqlite3.connect(DB_PATH)
+
+    try:
+        connection.execute(
+            """
+            UPDATE books
+            SET current_page = ?, status = ?, rating = ?, review = ?
+            WHERE id = ?
+            """,
+            (current_page, status, rating, review, book_id)
+        )
+        connection.commit()
     finally:
         connection.close()
