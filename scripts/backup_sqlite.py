@@ -9,7 +9,7 @@ SOURCE_DB = PROJECT_ROOT / "booktok.db"
 BACKUP_DIR = PROJECT_ROOT / "backups"
 
 
-def main() -> None:
+def create_backup() -> Path:
     if not SOURCE_DB.is_file():
         raise SystemExit(f"SQLite database not found: {SOURCE_DB}")
 
@@ -33,6 +33,11 @@ def main() -> None:
         backup_path.unlink(missing_ok=True)
         raise SystemExit("The backup did not pass SQLite's integrity check.")
 
+    return backup_path
+
+
+def main() -> None:
+    backup_path = create_backup()
     print(f"Created SQLite backup: {backup_path}")
 
 

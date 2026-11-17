@@ -1,5 +1,7 @@
 [CmdletBinding()]
-param()
+param(
+    [switch]$WithML
+)
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -32,7 +34,14 @@ if (-not (Test-Path $venvPython)) {
     }
 }
 
-& $venvPython -m pip install -r (Join-Path $projectRoot "requirements.txt")
+$pipArguments = @(
+    "-m", "pip", "install",
+    "-r", (Join-Path $projectRoot "requirements.txt")
+)
+if ($WithML) {
+    $pipArguments += @("-r", (Join-Path $projectRoot "requirements-ml.txt"))
+}
+& $venvPython @pipArguments
 if ($LASTEXITCODE -ne 0) {
     throw "Dependency installation failed. Check the Python and package-index output above, then rerun setup.ps1."
 }
@@ -49,12 +58,21 @@ if (-not (Test-Path $envPath)) {
         "POSTGRES_DB=booktok",
         "POSTGRES_PASSWORD=$dbPassword",
         "POSTGRES_PORT=5432",
-        "DATABASE_URL=postgresql://booktok:$dbPassword@127.0.0.1:5432/booktok"
+        "DATABASE_URL=postgresql://booktok:$dbPassword@127.0.0.1:5432/booktok",
+        "GOOGLE_BOOKS_API_KEY=",
+        "HARDCOVER_API_TOKEN=",
+        "BOOKTOK_MODEL_REVISION="
     )
     Set-Content -LiteralPath $envPath -Value $envLines -Encoding ascii
     Write-Host "Created an ignored .env file with a local database password. Its contents were not displayed."
 }
 
-Write-Host "BookTok Bestie dependencies are installed."
-Write-Host "Start the app with: .\.venv\Scripts\python.exe -m streamlit run app.py"
+if ($WithML) {
+    Write-Host "BookTok Bestie dependencies, including the local ML stack, are installed."
+} else {
+    Write-Host "BookTok Bestie base dependencies are installed."
+    Write-Host "Install the optional local ML stack with: powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1 -WithML"
+}
+Write-Host "Original SQLite tracker: .\.venv\Scripts\python.exe -m streamlit run app.py"
+Write-Host "New PostgreSQL app (after database setup): .\.venv\Scripts\python.exe -m streamlit run discovery_app.py"
 Write-Host "PostgreSQL is optional for this setup and is not started by this script."
