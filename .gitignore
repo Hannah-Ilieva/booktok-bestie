@@ -1,5 +1,6 @@
 .venv/
 __pycache__/
+*.py[cod]
 *.db
 *.sqlite
 *.sqlite3
@@ -11,3 +12,11 @@ backups/
 .model-cache/
 models/
 *.onnx
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+htmlcov/
+*.log
+.DS_Store
+Thumbs.db
